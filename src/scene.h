@@ -1,0 +1,50 @@
+#pragma once
+
+#include <vector>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <unordered_map>
+#include "glm/glm.hpp"
+#include "utilities.h"
+#include "sceneStructs.h"
+#include "bvh.h"
+using namespace std;
+
+class Scene {
+private:
+    ifstream fp_in;
+    int loadMaterial(string materialid);
+    int loadObject(string objectid);
+    int loadCamera();
+    bool loadModel(const string&, int objectid, bool useVertexNormal);
+    bool loadGeometry(const string&, int);
+    void loadTexture(const std::string& texturePath, cudaTextureObject_t* texObj, int type);
+    void LoadTextureFromMemory(void* data, int width, int height, int bits, int channels, cudaTextureObject_t* texObj);
+    void loadSkybox();
+public:
+    void buildBVH();
+    void buildStacklessBVH();
+    void LoadAllTextures();
+    void createLights();
+    Scene(string filename);
+    ~Scene();
+
+    std::vector<Object> objects;
+    std::vector<Material> materials;
+    std::vector<glm::ivec3> triangles;
+    std::vector<glm::vec3> verticies;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+    std::vector<Primitive> primitives;
+    std::vector<Primitive> lights;
+    std::vector<BVHGPUNode> bvhArray;
+    RenderState state;
+    BVHNode* bvhroot = nullptr;
+    cudaTextureObject_t skyboxTextureObj = 0;
+    std::vector<cudaArray*> textureDataPtrs;
+    std::vector<char*> gltfTexTmpArrays;
+    std::unordered_map< std::string, cudaTextureObject_t> strToTextureObj;
+    std::vector<std::pair<std::string, int> > textureLoadJobs;//texture path, materialID
+    std::vector <GLTFTextureLoadInfo> gltfTextureLoadJobs;
+};
